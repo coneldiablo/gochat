@@ -512,15 +512,13 @@ func processInput() {
 		}()
 		return
 	}
-	// --- END P2P File Sharing Command ---
 
 	// /blackout — тёмная комната с шуткой от Gemini
 	if text == "/blackout" {
-		go func() {
-			joke := askGemini("Расскажи очень чёрную, мрачную, но короткую шутку на русском языке. Не используй цензуру. Не добавляй пояснений. Только саму шутку.")
-			lines := splitLongMessage(joke, 60)
-			blackoutWithJokeLines(lines)
-		}()
+		// Отправляем команду на сервер, чтобы все получили
+		if err := conn.WriteMessage(websocket.TextMessage, []byte("/blackout")); err != nil {
+			addMessage("ERROR: Ошибка отправки blackout: " + err.Error())
+		}
 		return
 	}
 
@@ -636,6 +634,15 @@ func receiveMessages() {
 		// Обработка команды /psycho, пришедшей с сервера
 		if strings.TrimSpace(plain) == "/psycho" {
 			go runPsycho()
+			continue
+		}
+		// Обработка команды /blackout, пришедшей с сервера
+		if strings.TrimSpace(plain) == "/blackout" {
+			go func() {
+				joke := askGemini("Расскажи очень чёрную, мрачную, но короткую шутку на русском языке. Не используй цензуру. Не добавляй пояснений. Только саму шутку.")
+				lines := splitLongMessage(joke, 60)
+				blackoutWithJokeLines(lines)
+			}()
 			continue
 		}
 
