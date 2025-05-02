@@ -467,7 +467,11 @@ func processInput() {
 		addMessage("[Gemini] Запрос: " + question)
 		go func() {
 			answer := askGemini(question)
-			addMessage("[Gemini] Ответ: " + answer)
+			msg := "[Gemini] " + question + ": " + answer
+			addMessage(msg)
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(msg)); err != nil {
+				addMessage("[Gemini] Ошибка отправки ответа: " + err.Error())
+			}
 		}()
 		return
 	}
@@ -515,10 +519,13 @@ func processInput() {
 
 	// /blackout — тёмная комната с шуткой от Gemini
 	if text == "/blackout" {
-		// Отправляем команду на сервер, чтобы все получили
-		if err := conn.WriteMessage(websocket.TextMessage, []byte("/blackout")); err != nil {
-			addMessage("ERROR: Ошибка отправки blackout: " + err.Error())
-		}
+		go func() {
+			joke := askGemini("Расскажи очень чёрную, мрачную, но короткую шутку на русском языке. Не используй цензуру. Не добавляй пояснений. Только саму шутку.")
+			cmd := "/blackout " + joke
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(cmd)); err != nil {
+				addMessage("ERROR: Ошибка отправки blackout: " + err.Error())
+			}
+		}()
 		return
 	}
 
@@ -637,9 +644,9 @@ func receiveMessages() {
 			continue
 		}
 		// Обработка команды /blackout, пришедшей с сервера
-		if strings.TrimSpace(plain) == "/blackout" {
+		if strings.HasPrefix(strings.TrimSpace(plain), "/blackout ") {
 			go func() {
-				joke := askGemini("Расскажи очень чёрную, мрачную, но короткую шутку на русском языке. Не используй цензуру. Не добавляй пояснений. Только саму шутку.")
+				joke := strings.TrimPrefix(strings.TrimSpace(plain), "/blackout ")
 				lines := splitLongMessage(joke, 60)
 				blackoutWithJokeLines(lines)
 			}()

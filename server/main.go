@@ -436,15 +436,20 @@ func handleCommand(client *Client, msg string) {
 			}
 		}
 	case "/blackout":
-		// Рассылаем blackout всем клиентам комнаты
-		mu.Lock()
-		rObj, exists := rooms[client.room]
-		mu.Unlock()
-		if exists {
-			for c := range rObj.clients {
-				c.conn.WriteMessage(websocket.TextMessage, []byte("/blackout"))
+		// Если есть текст после /blackout, рассылаем его всем клиентам комнаты
+		joke := strings.TrimPrefix(msg, "/blackout")
+		joke = strings.TrimSpace(joke)
+		if joke != "" {
+			mu.Lock()
+			rObj, exists := rooms[client.room]
+			mu.Unlock()
+			if exists {
+				for c := range rObj.clients {
+					c.conn.WriteMessage(websocket.TextMessage, []byte("/blackout "+joke))
+				}
 			}
 		}
+		return
 	default:
 		// Поддержка русских символов в обычных сообщениях
 		broadcast(fmt.Sprintf("%s: %s", client.username, msg), client, false)
