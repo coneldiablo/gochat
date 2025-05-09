@@ -14,8 +14,8 @@ A secure chat application with end-to-end encryption, rooms, and fun features (G
 
 2. Clone the repository:
    ```bash
-   git clone https://github.com/your_username/think-asta-chat.git
-   cd think-asta-chat
+   git clone github.com/coneldiablo/gochat
+   cd gochat
    ```
 
 3. Install dependencies:
